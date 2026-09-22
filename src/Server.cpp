@@ -8,7 +8,7 @@
 #include <iostream>
 
 int main()
-{	
+{
 	// Info about Winsock init
 	WSADATA WsaData;
 	int Result;
@@ -29,7 +29,7 @@ int main()
 	// If socket was not created
 	if (ServerSocket == INVALID_SOCKET)
 	{
-		std::cout << "Socket was not created :/" << '\n';
+		std::cout << "Server socket was not created :/" << '\n';
 
 		WSACleanup();
 		return 1;
@@ -62,6 +62,23 @@ int main()
 	{
 		std::cout << "Listening failed..." << '\n';
 
+		closesocket(ServerSocket);
+		WSACleanup();
+		return 1;
+	}
+
+	// Info about client address
+	sockaddr_in ClientAddr{};
+
+	int ClientAddrSize = sizeof(ClientAddr);
+
+	// Accept of incoming connection attempt and saving client socket
+	SOCKET ClientSocket = accept(ServerSocket, (sockaddr*)&ClientAddr, &ClientAddrSize); // accept() will populate second field with client adress
+
+	// If not accepted
+	if (ClientSocket == INVALID_SOCKET)
+	{
+		std::cout << "Not accepted" << '\n';
 		closesocket(ServerSocket);
 		WSACleanup();
 		return 1;
