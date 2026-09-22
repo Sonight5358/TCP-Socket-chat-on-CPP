@@ -12,8 +12,9 @@ int main()
 	// Info about Winsock init
 	WSADATA WsaData;
 	int Result;
-
 	Result = WSAStartup(MAKEWORD(2, 2), &WsaData);
+
+	// If Winsock init failed
 	if (Result != 0)
 	{
 		std::cout << "Startup failed :(" << '\n';
@@ -43,8 +44,8 @@ int main()
 	// Bind Ip and port with this exact socket
 	Result = bind(ServerSocket, (sockaddr*)&ServAddr, sizeof(ServAddr)); // Socket descriptor, struct with server info, size of struct
 
-
-	if (Result != 0)
+	// If binding failed
+	if (Result == SOCKET_ERROR)
 	{
 		std::cout << "Binding failed..." << '\n';
 
@@ -53,6 +54,18 @@ int main()
 		return 1;
 	}
 
+	// Listening
+	Result = listen(ServerSocket, SOMAXCONN); // Socket descriptor, max length of pending connection queue
+
+	// If listening failed
+	if (Result == SOCKET_ERROR)
+	{
+		std::cout << "Listening failed..." << '\n';
+
+		closesocket(ServerSocket);
+		WSACleanup();
+		return 1;
+	}
 
 	// Close socket
 	closesocket(ServerSocket);
