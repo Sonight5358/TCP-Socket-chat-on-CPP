@@ -73,9 +73,9 @@ int main()
 	char buffer[DEFAULT_BUFLEN];
 	int buflen = DEFAULT_BUFLEN;
 
-	// Send
-	while (std::cin)
+	while (true)
 	{
+		// Send
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
 
 		// Send message from client on enter
@@ -89,18 +89,18 @@ int main()
 			WSACleanup();
 			return 1;
 		}
-	}
 
-	// Receive message from client (blocking fuction)
-	Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
+		// Receive message from client (blocking fuction)
+		Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
 
-	// If cant recieve
-	if (Result == SOCKET_ERROR)
-	{
-		std::cout << "Not received." << '\n';
-		closesocket(ConnectionSocket);
-		WSACleanup();
-		return 1;
+		// If cant recieve
+		if (Result == SOCKET_ERROR)
+		{
+			std::cout << "Not received." << '\n';
+			closesocket(ConnectionSocket);
+			WSACleanup();
+			return 1;
+		}
 	}
 
 	// In console
