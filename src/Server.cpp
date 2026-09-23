@@ -91,7 +91,7 @@ int main()
 	int buflen = DEFAULT_BUFLEN;
 
 	// Receive message from client (blocking fuction)
-	Result = recv(ConnectionSocket, buffer, buflen, 0); // Client socket, buffer, lenght of buffer, advanced receiving option flag
+	Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
 
 	// If cant recieve
 	if (Result == SOCKET_ERROR)
@@ -102,8 +102,31 @@ int main()
 		return 1;
 	}
 
+	// In console
+	std::cout << "Server: ";
+	std::cout.write(buffer, Result);
+	std::cout << '\n';
+
+	// Send
+	while (std::cin)
+	{
+		std::cin.getline(buffer, DEFAULT_BUFLEN);
+
+		// Send message from client on enter
+		Result = send(ConnectionSocket, buffer, strlen(buffer), 0);
+
+		// If cant send
+		if (Result == SOCKET_ERROR)
+		{
+			std::cout << "Not sent." << '\n';
+			closesocket(ConnectionSocket);
+			WSACleanup();
+			return 1;
+		}
+	}
+
 	// Close socket
-	closesocket(ListenSocket);
+	closesocket(ConnectionSocket);
 
 	// WS2_32 terminate
 	WSACleanup();
