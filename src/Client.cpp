@@ -26,11 +26,11 @@ int main()
 	}
 
 	// Socket
-	SOCKET ClientSocket = INVALID_SOCKET;
-	ClientSocket = socket(AF_INET, SOCK_STREAM, 0); // IPv4, TCP, auto protocol
+	SOCKET ConnectionSocket = INVALID_SOCKET;
+	ConnectionSocket = socket(AF_INET, SOCK_STREAM, 0); // IPv4, TCP, auto protocol
 
 	// If socket was not created
-	if (ClientSocket == INVALID_SOCKET)
+	if (ConnectionSocket == INVALID_SOCKET)
 	{
 		std::cout << "Client socket was not created :/" << '\n';
 
@@ -51,27 +51,45 @@ int main()
 	{
 		std::cout << "pton failed!" << '\n';
 
-		closesocket(ClientSocket);
+		closesocket(ConnectionSocket);
 		WSACleanup();
 		return 1;
 	}
 
 	// Connection to server
-	Result = connect(ClientSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr)); 
+	Result = connect(ConnectionSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr)); 
 
 	// If connection failed
 	if (Result == SOCKET_ERROR)
 	{
 		std::cout << "Connection failed///" << '\n';
 
-		closesocket(ClientSocket);
+		closesocket(ConnectionSocket);
 		WSACleanup();
 		return 1;
 	}
 
+	// Info about Server
+	
+
+	// Message buffer
+	char buffer[DEFAULT_BUFLEN];
+	int buflen = DEFAULT_BUFLEN;
+
+	// Receive message from client (blocking fuction)
+	Result = recv(ConnectionSocket, buffer, buflen, 0); // Server socket, buffer, lenght of buffer, advanced receiving option flag
+
+	// If cant recieve
+	if (Result == SOCKET_ERROR)
+	{
+		std::cout << "Not received." << '\n';
+		closesocket(ServerSocket);
+		WSACleanup();
+		return 1;
+	}
 
 	// Close socket
-	closesocket(ClientSocket);
+	closesocket(ConnectionSocket);
 
 	// WS2_32 terminate
 	WSACleanup();

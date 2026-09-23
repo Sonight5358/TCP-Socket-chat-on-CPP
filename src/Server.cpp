@@ -25,11 +25,11 @@ int main()
 	}
 
 	// Socket
-	SOCKET ServerSocket = INVALID_SOCKET;
-	ServerSocket = socket(AF_INET, SOCK_STREAM, 0); // IPv4, TCP, auto protocol
+	SOCKET ListenSocket = INVALID_SOCKET;
+	ListenSocket = socket(AF_INET, SOCK_STREAM, 0); // IPv4, TCP, auto protocol
 
 	// If socket was not created
-	if (ServerSocket == INVALID_SOCKET)
+	if (ListenSocket == INVALID_SOCKET)
 	{
 		std::cout << "Server socket was not created :/" << '\n';
 
@@ -44,27 +44,27 @@ int main()
 	ServAddr.sin_addr.s_addr = INADDR_ANY;  // .sin_addr - struct with IP, .s_addr (unsigned long) - field of the .sin_addr for IP, INADDR_ANY - 0.0.0.0 (any address basically)
 
 	// Bind Ip and port with this exact socket
-	Result = bind(ServerSocket, (sockaddr*)&ServAddr, sizeof(ServAddr)); // Socket descriptor, struct with server info, size of struct
+	Result = bind(ListenSocket, (sockaddr*)&ServAddr, sizeof(ServAddr)); // Socket descriptor, struct with server info, size of struct
 
 	// If binding failed
 	if (Result == SOCKET_ERROR)
 	{
 		std::cout << "Binding failed..." << '\n';
 
-		closesocket(ServerSocket);
+		closesocket(ListenSocket);
 		WSACleanup();
 		return 1;
 	}
 
 	// Listening
-	Result = listen(ServerSocket, SOMAXCONN); // Socket descriptor, max length of pending connection queue
+	Result = listen(ListenSocket, SOMAXCONN); // Socket descriptor, max length of pending connection queue
 
 	// If listening failed
 	if (Result == SOCKET_ERROR)
 	{
 		std::cout << "Listening failed..." << '\n';
 
-		closesocket(ServerSocket);
+		closesocket(ListenSocket);
 		WSACleanup();
 		return 1;
 	}
@@ -75,13 +75,13 @@ int main()
 	int ClientAddrSize = sizeof(ClientAddr);
 
 	// Accept of incoming connection attempt and saving client socket
-	SOCKET ClientSocket = accept(ServerSocket, (sockaddr*)&ClientAddr, &ClientAddrSize); // accept() will populate second field with client address
+	SOCKET ConnectionSocket = accept(ListenSocket, (sockaddr*)&ClientAddr, &ClientAddrSize); // accept() will populate second field with client address
 
 	// If not accepted
-	if (ClientSocket == INVALID_SOCKET)
+	if (ConnectionSocket == INVALID_SOCKET)
 	{
 		std::cout << "Not accepted" << '\n';
-		closesocket(ServerSocket);
+		closesocket(ListenSocket);
 		WSACleanup();
 		return 1;
 	}
@@ -91,19 +91,19 @@ int main()
 	int buflen = DEFAULT_BUFLEN;
 
 	// Receive message from client (blocking fuction)
-	Result = recv(ClientSocket, buffer, buflen, 0); // Client socket, buffer, lenght of buffer, advanced receiving option flag
+	Result = recv(ConnectionSocket, buffer, buflen, 0); // Client socket, buffer, lenght of buffer, advanced receiving option flag
 
 	// If cant recieve
 	if (Result == SOCKET_ERROR)
 	{
 		std::cout << "Not received." << '\n';
-		closesocket(ClientSocket);
+		closesocket(ConnectionSocket);
 		WSACleanup();
 		return 1;
 	}
 
 	// Close socket
-	closesocket(ServerSocket);
+	closesocket(ListenSocket);
 
 	// WS2_32 terminate
 	WSACleanup();
