@@ -123,7 +123,6 @@ int main()
 			WSACleanup();
 			return 1;
 		}
-
 	}
 	
 	// Close socket

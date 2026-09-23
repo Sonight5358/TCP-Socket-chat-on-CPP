@@ -101,12 +101,12 @@ int main()
 			WSACleanup();
 			return 1;
 		}
-	}
 
-	// In console
-	std::cout << "Client: ";
-	std::cout.write(buffer, Result);
-	std::cout << '\n';
+		// In console
+		std::cout << "Server: ";
+		std::cout.write(buffer, Result);
+		std::cout << '\n';
+	}
 
 	// Close socket
 	closesocket(ConnectionSocket);
