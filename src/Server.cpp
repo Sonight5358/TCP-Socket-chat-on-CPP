@@ -6,8 +6,43 @@
 
 #include <winsock2.h>
 #include <windows.h>
+#include <thread>
 
 #include <iostream>
+#include <thread>
+
+// Receive message from client (blocking fuction) in a separate thread
+void ReceiveThread(SOCKET ConnectionSocket)
+{
+	// Message buffer
+	char buffer[DEFAULT_BUFLEN];
+	int buflen = DEFAULT_BUFLEN;
+
+	while (true)
+	{
+		int Result;
+		Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
+
+		// If cant recieve
+		if (Result == SOCKET_ERROR)
+		{
+			std::cout << "Not received." << '\n';
+			return;
+		}
+
+		// If connection closed
+		if (Result == 0)
+		{
+			std::cout << "Connection closed." << '\n';
+			return;
+		}
+
+		// In console
+		std::cout << "Client: ";
+		std::cout.write(buffer, Result);
+		std::cout << '\n';
+	}
+}
 
 int main()
 {
@@ -90,34 +125,11 @@ int main()
 	char buffer[DEFAULT_BUFLEN];
 	int buflen = DEFAULT_BUFLEN;
 
+	// Thread for receiving messages from server
+	std::thread Thread1(ReceiveThread, ConnectionSocket);
+
 	while (true)
 	{
-		// Receive message from client (blocking fuction)
-		Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
-
-		// If cant recieve
-		if (Result == SOCKET_ERROR)
-		{
-			std::cout << "Not received." << '\n';
-			closesocket(ConnectionSocket);
-			WSACleanup();
-			return 1;
-		}
-
-		// If connection closed
-		if (Result == 0)
-		{
-			std::cout << "Connection closed." << '\n';
-			closesocket(ConnectionSocket);
-			WSACleanup();
-			return 0;
-		}
-
-		// In console
-		std::cout << "Client: ";
-		std::cout.write(buffer, Result);
-		std::cout << '\n';
-
 		// Send
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
 
@@ -133,6 +145,9 @@ int main()
 			return 1;
 		}
 	}
+
+	// Wait for the new thread to finish
+	Thread1.join();
 	
 	// Close socket
 	closesocket(ConnectionSocket);
