@@ -104,6 +104,15 @@ int main()
 			return 1;
 		}
 
+		// If connection closed
+		if (Result == 0)
+		{
+			std::cout << "Connection closed." << '\n';
+			closesocket(ConnectionSocket);
+			WSACleanup();
+			return 0;
+		}
+
 		// In console
 		std::cout << "Client: ";
 		std::cout.write(buffer, Result);
