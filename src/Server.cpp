@@ -6,31 +6,22 @@
 
 #include <winsock2.h>
 #include <windows.h>
-#include <thread>
 
 #include <iostream>
 #include <thread>
+#include "Socket.h"
 
 // Receive message from client (blocking fuction) in a separate thread
-void ReceiveThread(SOCKET ConnectionSocket)
+void ReceiveThread(Socket& ConnectionSocket)
 {
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];
-	int buflen = DEFAULT_BUFLEN;
 
 	while (true)
 	{
 		int Result;
-		Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
+		Result = ConnectionSocket.Recv(buffer, 0);
 
-		// If cant recieve
-		if (Result == SOCKET_ERROR)
-		{
-			std::cout << "Not received." << '\n';
-			return;
-		}
-
-		// If connection closed
 		if (Result == 0)
 		{
 			std::cout << "Connection closed." << '\n';
@@ -60,17 +51,7 @@ int main()
 	}
 
 	// Socket
-	SOCKET ListenSocket = INVALID_SOCKET;
-	ListenSocket = socket(AF_INET, SOCK_STREAM, 0); // IPv4, TCP, auto protocol
-
-	// If socket was not created
-	if (ListenSocket == INVALID_SOCKET)
-	{
-		std::cout << "Server socket was not created :/" << '\n';
-
-		WSACleanup();
-		return 1;
-	}
+	Socket ListenSocket; // IPv4, TCP, auto protocol
 
 	// Struct with server info
 	sockaddr_in ServAddr{};
@@ -79,54 +60,22 @@ int main()
 	ServAddr.sin_addr.s_addr = INADDR_ANY;  // .sin_addr - struct with IP, .s_addr (unsigned long) - field of the .sin_addr for IP, INADDR_ANY - 0.0.0.0 (any address basically)
 
 	// Bind Ip and port with this exact socket
-	Result = bind(ListenSocket, (sockaddr*)&ServAddr, sizeof(ServAddr)); // Socket descriptor, struct with server info, size of struct
-
-	// If binding failed
-	if (Result == SOCKET_ERROR)
-	{
-		std::cout << "Binding failed..." << '\n';
-
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
+	ListenSocket.Bind(ServAddr);
 
 	// Listening
-	Result = listen(ListenSocket, SOMAXCONN); // Socket descriptor, max length of pending connection queue
-
-	// If listening failed
-	if (Result == SOCKET_ERROR)
-	{
-		std::cout << "Listening failed..." << '\n';
-
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
+	ListenSocket.Listen(); // Max length of pending connection queue by default
 
 	// Info about client address
 	sockaddr_in ClientAddr{};
 
-	int ClientAddrSize = sizeof(ClientAddr);
-
-	// Accept of incoming connection attempt and saving client socket
-	SOCKET ConnectionSocket = accept(ListenSocket, (sockaddr*)&ClientAddr, &ClientAddrSize); // accept() will populate second field with client address
-
-	// If not accepted
-	if (ConnectionSocket == INVALID_SOCKET)
-	{
-		std::cout << "Not accepted" << '\n';
-		closesocket(ListenSocket);
-		WSACleanup();
-		return 1;
-	}
+	// Accept of incoming connection attempt and saving the same parameters as a client socket
+	Socket ConnectionSocket = ListenSocket.Accept(ClientAddr); // accept() will populate second field with client address
 
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];
-	int buflen = DEFAULT_BUFLEN;
 
 	// Thread for receiving messages from server
-	std::thread Thread1(ReceiveThread, ConnectionSocket);
+	std::thread Thread1(ReceiveThread, std::ref(ConnectionSocket));
 
 	while (true)
 	{
@@ -134,23 +83,11 @@ int main()
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
 
 		// Send message from client on enter
-		Result = send(ConnectionSocket, buffer, strlen(buffer), 0);
-
-		// If cant send
-		if (Result == SOCKET_ERROR)
-		{
-			std::cout << "Not sent." << '\n';
-			closesocket(ConnectionSocket);
-			WSACleanup();
-			return 1;
-		}
+		ConnectionSocket.Send(buffer, 0);
 	}
 
 	// Wait for the new thread to finish
 	Thread1.join();
-	
-	// Close socket
-	closesocket(ConnectionSocket);
 
 	// WS2_32 terminate
 	WSACleanup();

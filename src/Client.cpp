@@ -10,27 +10,19 @@
 
 #include <iostream>
 #include <thread>
+#include "Socket.h"
 
-// Receive message from client (blocking fuction) in a separate thread
-void ReceiveThread(SOCKET ConnectionSocket)
-{	
+// Receive message from server (blocking fuction) in a separate thread
+void ReceiveThread(Socket& ConnectionSocket)
+{
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];
-	int buflen = DEFAULT_BUFLEN;
 
 	while (true)
 	{
 		int Result;
-		Result = recv(ConnectionSocket, buffer, buflen, 0); // Connection socket, buffer, lenght of buffer, advanced receiving option flag
+		Result = ConnectionSocket.Recv(buffer, 0);
 
-		// If cant recieve
-		if (Result == SOCKET_ERROR)
-		{
-			std::cout << "Not received." << '\n';
-			return;
-		}
-
-		// If connection closed
 		if (Result == 0)
 		{
 			std::cout << "Connection closed." << '\n';
@@ -60,17 +52,7 @@ int main()
 	}
 
 	// Socket
-	SOCKET ConnectionSocket = INVALID_SOCKET;
-	ConnectionSocket = socket(AF_INET, SOCK_STREAM, 0); // IPv4, TCP, auto protocol
-
-	// If socket was not created
-	if (ConnectionSocket == INVALID_SOCKET)
-	{
-		std::cout << "Client socket was not created :/" << '\n';
-
-		WSACleanup();
-		return 1;
-	}
+	Socket ConnectionSocket;
 
 	// Struct with server info
 	sockaddr_in ServerAddr{};
@@ -84,28 +66,15 @@ int main()
 	if (Result != 1)
 	{
 		std::cout << "pton failed!" << '\n';
-
-		closesocket(ConnectionSocket);
 		WSACleanup();
 		return 1;
 	}
 
 	// Connection to server
-	Result = connect(ConnectionSocket, (sockaddr*)&ServerAddr, sizeof(ServerAddr)); 
-
-	// If connection failed
-	if (Result == SOCKET_ERROR)
-	{
-		std::cout << "Connection failed///" << '\n';
-
-		closesocket(ConnectionSocket);
-		WSACleanup();
-		return 1;
-	}
+	ConnectionSocket.Connect(ServerAddr); 
 
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];
-	int buflen = DEFAULT_BUFLEN;
 
 	// Thread for receiving messages from server
 	std::thread Thread1(ReceiveThread, ConnectionSocket);
@@ -116,23 +85,11 @@ int main()
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
 
 		// Send message from client on enter
-		Result = send(ConnectionSocket, buffer, strlen(buffer), 0);
-
-		// If cant send
-		if (Result == SOCKET_ERROR)
-		{
-			std::cout << "Not sent." << '\n';
-			closesocket(ConnectionSocket);
-			WSACleanup();
-			return 1;
-		}
+		ConnectionSocket.Send(buffer, 0);
 	}
 
 	// Wait for the new thread to finish
 	Thread1.join();
-
-	// Close socket
-	closesocket(ConnectionSocket);
 
 	// WS2_32 terminate
 	WSACleanup();
