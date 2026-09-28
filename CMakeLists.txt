@@ -3,6 +3,11 @@ cmake_minimum_required(VERSION 3.20)
 # CXX project only
 project(TCP-Socket-chat-on-CPP LANGUAGES CXX)
 
+# Requirements
+set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 # Executables
 add_executable(TCPServer src/Server.cpp src/Socket.cpp)
 add_executable(TCPClient src/Client.cpp src/Socket.cpp)

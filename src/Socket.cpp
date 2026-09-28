@@ -116,13 +116,17 @@ void Socket::Connect(const sockaddr_in6& name)
 }
 
 // Send message
-void Socket::Send(const char* buf, int flag)
-{
+int Socket::Send(const char* buf, int flag)
+{	
+	int SentBytes = send(SocketDesc, buf, strlen(buf), flag);
+
 	// If cant send
-	if (send(SocketDesc, buf, strlen(buf), flag) == SOCKET_ERROR)
+	if (SentBytes == SOCKET_ERROR)
 	{
 		throw std::runtime_error(std::to_string(WSAGetLastError()));
 	}
+
+	return SentBytes;
 }
 
 // Receive in a template in .h

@@ -10,6 +10,7 @@
 #include <iostream>
 #include <thread>
 #include "Socket.h"
+#include "Retry.h"
 
 // Receive message from client (blocking fuction) in a separate thread
 void ReceiveThread(Socket& ConnectionSocket)
@@ -19,8 +20,17 @@ void ReceiveThread(Socket& ConnectionSocket)
 
 	while (true)
 	{
-		int Result;
-		Result = ConnectionSocket.Recv(buffer, 0);
+		std::optional<int> Resultop = Retry<int>(
+			[&]()
+			{
+				return ConnectionSocket.Recv(buffer, 0);
+			},
+			3,
+			std::chrono::seconds(1),
+			true
+		);
+
+		int Result = Resultop.value();
 
 		if (Result == 0)
 		{
@@ -60,21 +70,46 @@ int main()
 	ServAddr.sin_addr.s_addr = INADDR_ANY;  // .sin_addr - struct with IP, .s_addr (unsigned long) - field of the .sin_addr for IP, INADDR_ANY - 0.0.0.0 (any address basically)
 
 	// Bind Ip and port with this exact socket
-	ListenSocket.Bind(ServAddr);
+	RetryVoid(
+		[&]()
+		{
+			ListenSocket.Bind(ServAddr);
+		},
+		3,
+		std::chrono::seconds(1)
+	);
+	
 
 	// Listening
-	ListenSocket.Listen(); // Max length of pending connection queue by default
+	RetryVoid(
+		[&]()
+		{
+			ListenSocket.Listen(); // Max length of pending connection queue by default
+		},
+		3,
+		std::chrono::seconds(1)
+	);
 
 	// Info about client address
 	sockaddr_in ClientAddr{};
 
 	// Accept of incoming connection attempt and saving the same parameters as a client socket
-	Socket ConnectionSocket = ListenSocket.Accept(ClientAddr); // accept() will populate second field with client address
+	std::optional<Socket> ConnectionSocketOp = Retry<Socket>(
+		[&]()
+		{
+			return ListenSocket.Accept(ClientAddr); // accept() will populate second field with client address
+		},
+		3,
+		std::chrono::seconds(1),
+		true
+	);
+
+	//Socket ConnectionSocket = ConnectionSocketOp.value(); !!!!!!!!!!!!!
 
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];
 
-	// Thread for receiving messages from server
+	// Thread for receiving messages from client
 	std::thread Thread1(ReceiveThread, std::ref(ConnectionSocket));
 
 	while (true)
@@ -82,11 +117,19 @@ int main()
 		// Send
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
 
-		// Send message from client on enter
-		ConnectionSocket.Send(buffer, 0);
+		// Send message from server on enter
+		std::optional<int> SentBytes = Retry<int>(
+			[&]()
+			{
+				return ConnectionSocket.Send(buffer, 0);
+			},
+			3,
+			std::chrono::seconds(1),
+			true
+		);
 	}
 
-	// Wait for the new thread to finish
+	// Wait for the new thread to finish (it doesnt work for now)
 	Thread1.join();
 
 	// WS2_32 terminate

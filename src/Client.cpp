@@ -11,6 +11,7 @@
 #include <iostream>
 #include <thread>
 #include "Socket.h"
+#include "Retry.h"
 
 // Receive message from server (blocking fuction) in a separate thread
 void ReceiveThread(Socket& ConnectionSocket)
@@ -20,8 +21,17 @@ void ReceiveThread(Socket& ConnectionSocket)
 
 	while (true)
 	{
-		int Result;
-		Result = ConnectionSocket.Recv(buffer, 0);
+		std::optional<int> Resultop = Retry<int>(
+			[&]()
+			{
+				return ConnectionSocket.Recv(buffer, 0);
+			},
+			3,
+			std::chrono::seconds(1),
+			true
+		);
+
+		int Result = Resultop.value();
 
 		if (Result == 0)
 		{
@@ -71,7 +81,14 @@ int main()
 	}
 
 	// Connection to server
-	ConnectionSocket.Connect(ServerAddr); 
+	RetryVoid(
+		[&]() 
+		{
+			ConnectionSocket.Connect(ServerAddr); // Lambda func
+		},
+		3,
+		std::chrono::seconds(1)
+	);
 
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];
@@ -85,10 +102,18 @@ int main()
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
 
 		// Send message from client on enter
-		ConnectionSocket.Send(buffer, 0);
+		std::optional<int> SentBytes = Retry<int>(
+			[&]()
+			{
+				return ConnectionSocket.Send(buffer, 0);
+			},
+			3,
+			std::chrono::seconds(1),
+			true
+		);
 	}
 
-	// Wait for the new thread to finish
+	// Wait for the new thread to finish (it doesnt work for now)
 	Thread1.join();
 
 	// WS2_32 terminate

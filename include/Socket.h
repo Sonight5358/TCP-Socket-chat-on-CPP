@@ -48,7 +48,7 @@ public:
 	void Connect(const sockaddr_in6& name);
 
 	// Send message
-	void Send(const char* buf, int flag);
+	int Send(const char* buf, int flag);
 
 	// Receive
 	template <size_t T>
