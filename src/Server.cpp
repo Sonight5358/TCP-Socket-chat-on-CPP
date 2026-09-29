@@ -104,7 +104,7 @@ int main()
 		true
 	);
 
-	//Socket ConnectionSocket = ConnectionSocketOp.value(); !!!!!!!!!!!!!
+	Socket ConnectionSocket = std::move(ConnectionSocketOp.value()); // Using move constructor
 
 	// Message buffer
 	char buffer[DEFAULT_BUFLEN];

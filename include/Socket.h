@@ -23,6 +23,18 @@ public:
 	// Constructor for already existing socket descriptor
 	Socket(SOCKET createsock);
 
+	// Move constructor
+	Socket(Socket&& other) noexcept;
+
+	// Move asingment
+	Socket& operator = (Socket&& other) noexcept;
+
+	// Copy constructor
+	Socket(const Socket& other) = delete;
+
+	//Copy asingment
+	Socket& operator = (const Socket& other) = delete;
+
 	// Destructor
 	~Socket();
 

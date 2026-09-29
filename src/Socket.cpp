@@ -14,6 +14,30 @@ Socket::Socket(int af, int type, int protocol)
 // Constructor for already existing socket descriptor
 Socket::Socket(SOCKET createsock) : SocketDesc(createsock) {}
 
+// Move constructor
+Socket::Socket(Socket&& other) noexcept
+{	
+	SocketDesc = other.SocketDesc;
+	other.SocketDesc = INVALID_SOCKET;
+}
+
+// Move asingment
+Socket& Socket::operator = (Socket&& other) noexcept
+{
+	if (this != &other)
+	{
+		if (SocketDesc != INVALID_SOCKET)
+		{
+			closesocket(SocketDesc);
+		}
+
+		SocketDesc = other.SocketDesc;
+		other.SocketDesc = INVALID_SOCKET;
+	}
+
+	return *this;
+}
+
 // Destructor
 Socket::~Socket()
 {
