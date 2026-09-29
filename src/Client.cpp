@@ -10,6 +10,8 @@
 
 #include <iostream>
 #include <thread>
+#include <cstring>
+#include <string>
 #include "Socket.h"
 #include "Retry.h"
 
@@ -20,29 +22,50 @@ void ReceiveThread(Socket& ConnectionSocket)
 	char buffer[DEFAULT_BUFLEN];
 
 	while (true)
-	{
-		std::optional<int> Resultop = Retry<int>(
-			[&]()
-			{
-				return ConnectionSocket.Recv(buffer, 0);
-			},
-			3,
-			std::chrono::seconds(1),
-			true
-		);
-
-		int Result = Resultop.value();
-
-		if (Result == 0)
+	{	
+		try
 		{
-			std::cout << "Connection closed." << '\n';
-			return;
+			std::optional<int> Resultop = Retry<int>(
+				[&]()
+				{
+					return ConnectionSocket.Recv(buffer, 0);
+				},
+				3,
+				std::chrono::seconds(1),
+				true
+			);
+
+			int Result = Resultop.value();
+
+			if (Result == 0)
+			{
+				std::cout << "Connection closed." << '\n';
+				return;
+			}
+
+			std::string Message(buffer, Result);
+
+			if (Message == "/exit")
+			{
+				ConnectionSocket.Shutdown(SD_BOTH);
+				break;
+			}
+
+			// In console
+			std::cout << "Server: ";
+			std::cout.write(buffer, Result);
+			std::cout << '\n';
 		}
 
-		// In console
-		std::cout << "Server: ";
-		std::cout.write(buffer, Result);
-		std::cout << '\n';
+		catch (const std::exception& e)
+		{	
+			if (std::stoi(e.what()) == WSAESHUTDOWN)
+			{
+				return;
+			}
+
+			std::cout << "Error: " << e.what() << '\n';
+		}
 	}
 }
 
@@ -94,12 +117,18 @@ int main()
 	char buffer[DEFAULT_BUFLEN];
 
 	// Thread for receiving messages from server
-	std::thread Thread1(ReceiveThread, ConnectionSocket);
+	std::thread Thread1(ReceiveThread, std::ref(ConnectionSocket));
 
 	while (true)
 	{
 		// Send
 		std::cin.getline(buffer, DEFAULT_BUFLEN);
+
+		if (strcmp(buffer, "/exit") == 0)
+		{
+			ConnectionSocket.Shutdown(SD_BOTH);
+			break;
+		}
 
 		// Send message from client on enter
 		std::optional<int> SentBytes = Retry<int>(

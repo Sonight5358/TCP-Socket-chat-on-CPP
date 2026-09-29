@@ -154,3 +154,17 @@ int Socket::Send(const char* buf, int flag)
 }
 
 // Receive in a template in .h
+
+// Shutdown
+int Socket::Shutdown(int how)
+{	
+	int Result = shutdown(SocketDesc, how);
+
+	// If shutdown failed
+	if (Result == SOCKET_ERROR)
+	{
+		throw std::runtime_error(std::to_string(WSAGetLastError()));
+	}
+
+	return Result;
+}

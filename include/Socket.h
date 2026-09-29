@@ -76,4 +76,6 @@ public:
 
 		return Result;
 	}
+
+	int Shutdown(int how);
 };
