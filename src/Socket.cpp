@@ -142,15 +142,23 @@ void Socket::Connect(const sockaddr_in6& name)
 // Send message
 int Socket::Send(const char* buf, int flag)
 {	
-	int SentBytes = send(SocketDesc, buf, strlen(buf), flag);
+	int total = strlen(buf);
+	int sent = 0;
 
-	// If cant send
-	if (SentBytes == SOCKET_ERROR)
-	{
-		throw std::runtime_error(std::to_string(WSAGetLastError()));
+	while (sent < total)
+	{	
+		int sentBytes = send(SocketDesc, buf + sent, total - sent, flag);
+
+		// If cant send
+		if (sentBytes == SOCKET_ERROR)
+		{
+			throw std::runtime_error(std::to_string(WSAGetLastError()));
+		}
+
+		sent += sentBytes;
 	}
 
-	return SentBytes;
+	return sent;
 }
 
 // Receive in a template in .h
